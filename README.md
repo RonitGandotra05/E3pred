@@ -29,7 +29,10 @@ Requirements
 - subprocess (standard library)
 - os (standard library)
 - csv (standard library)
-
+- tqdm
+- openpyxl
+- scikit-learn
+  
 Installation
 ------------
 1. Ensure you have Python 3.x installed on your system.
