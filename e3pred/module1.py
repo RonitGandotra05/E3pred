@@ -2,6 +2,9 @@ import os
 import pandas as pd
 import subprocess
 import joblib
+import requests
+import xml.etree.ElementTree as ET
+import csv
 
 # Function to prompt for the input FASTA filename
 def get_input_file():
@@ -16,7 +19,7 @@ def run_pfeature_comp_command(fasta_file, base_filename, feature):
 
 # Columns to extract after combining
 columns_to_extract = [
-    'BTC_T', 'BTC_S', 'BTC_H', 'BTC_D', 'SOC1_G1', 
+     'BTC_T', 'BTC_S', 'BTC_H', 'BTC_D', 'SOC1_G1', 
     'AAI_NADH010107', 'AAI_JUNJ780101', 'AAI_BIOV880102', 
     'AAI_NADH010102', 'AAI_BIOV880101', 'AAI_RADA880106', 
     'APAAC1_D', 'PAAC1_D', 'AAC_D', 'AAI_NADH010103', 
@@ -174,14 +177,96 @@ def create_output_csv(sequences, labels, output_file):
         'Sequence Version No.': [seq[7] for seq in sequences],
         'Gene Name': [seq[8] for seq in sequences],
         'Sequence Length': [seq[9] for seq in sequences],
-        'Predicted Label': labels,
+        'label': labels,
         'UniProt Link': [f"https://www.uniprot.org/uniprot/{seq[1]}" for seq in sequences]
     })
     output_df.to_csv(output_file, index=False)
     print(f"Output saved to '{output_file}'")
 
-# Main function to execute the whole process
+# Function to call UbiBrowser API
+def call_ubibrowser_api(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.content
+        else:
+            print(f"Failed to fetch data from URL: {url}")
+            print(f"HTTP Status Code: {response.status_code}")
+            print(f"Response Text: {response.text}")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return None
+
+def parse_xml_response(xml_content):
+    try:
+        root = ET.fromstring(xml_content)
+        interactions = root.findall('.//Interaction')
+        
+        data = []
+        for interaction in interactions:
+            enzyme_uniprot_AC = interaction.find('enzyme_uniprot_AC').text if interaction.find('enzyme_uniprot_AC') is not None else ''
+            enzyme_gene_name = interaction.find('enzyme_gene_name').text if interaction.find('enzyme_gene_name') is not None else ''
+            substrate_uniprot_AC = interaction.find('substrate_uniprot_AC').text if interaction.find('substrate_uniprot_AC') is not None else ''
+            substrate_gene_name = interaction.find('substrate_gene_name').text if interaction.find('substrate_gene_name') is not None else ''
+            species = interaction.find('species').text if interaction.find('species') is not None else ''
+            confidence_score = interaction.find('confidence_score').text if interaction.find('confidence_score') is not None else ''
+            likelihood_ratio = interaction.find('likelihood_ratio').text if interaction.find('likelihood_ratio') is not None else ''
+            rank = interaction.find('rank').text if interaction.find('rank') is not None else ''
+            p_value = interaction.find('P-value').text if interaction.find('P-value') is not None else ''
+            level = interaction.find('Level').text if interaction.find('Level') is not None else ''
+            enzyme_type = interaction.find('enzyme_type').text if interaction.find('enzyme_type') is not None else ''
+
+            domain_lr = interaction.find('.//DOMAIN_LR').text if interaction.find('.//DOMAIN_LR') is not None else ''
+            domain_enzyme = interaction.find('.//domain_enzyme').text if interaction.find('.//domain_enzyme') is not None else ''
+            domain_substrate = interaction.find('.//domain_substrate').text if interaction.find('.//domain_substrate') is not None else ''
+
+            go_lr = interaction.find('.//GO_LR').text if interaction.find('.//GO_LR') is not None else ''
+            go_enzyme = interaction.find('.//GO_enzyme').text if interaction.find('.//GO_enzyme') is not None else ''
+            go_substrate = interaction.find('.//GO_substrate').text if interaction.find('.//GO_substrate') is not None else ''
+
+            net_lr = interaction.find('.//NET_LR').text if interaction.find('.//NET_LR') is not None else ''
+            net_number = interaction.find('.//net_number').text if interaction.find('.//net_number') is not None else ''
+            net_score = interaction.find('.//net_score').text if interaction.find('.//net_score') is not None else ''
+
+            motif_lr = interaction.find('.//MOTIF_LR').text if interaction.find('.//MOTIF_LR') is not None else ''
+            motif = interaction.find('.//motif').text if interaction.find('.//motif') is not None else ''
+            motif_others_elements = interaction.findall('.//motif_others')
+            motif_others = '; '.join([elem.text if elem is not None else '' for elem in motif_others_elements])
+
+            data.append({
+                'enzyme_uniprot_AC': enzyme_uniprot_AC,
+                'enzyme_gene_name': enzyme_gene_name,
+                'substrate_uniprot_AC': substrate_uniprot_AC,
+                'substrate_gene_name': substrate_gene_name,
+                'species': species,
+                'confidence_score': confidence_score,
+                'likelihood_ratio': likelihood_ratio,
+                'rank': rank,
+                'P-value': p_value,
+                'Level': level,
+                'enzyme_type': enzyme_type,
+                'domain_lr': domain_lr,
+                'domain_enzyme': domain_enzyme,
+                'domain_substrate': domain_substrate,
+                'go_lr': go_lr,
+                'go_enzyme': go_enzyme,
+                'go_substrate': go_substrate,
+                'net_lr': net_lr,
+                'net_number': net_number,
+                'net_score': net_score,
+                'motif_lr': motif_lr,
+                'motif': motif,
+                'motif_others': motif_others
+            })
+        
+        return data
+    except Exception as e:
+        print(f"Error parsing XML: {e}")
+        return []
+
 def main():
+
     fasta_file, base_filename = get_input_file()
     sequences = parse_fasta(fasta_file)
     for feature in ["aac", "btc", "paac", "apaac", "soc", "aai"]:
@@ -209,7 +294,91 @@ def main():
     labels, model_name = run_models_on_test_data(output_file, selected_model, 'scaler.pkl')
     output_csv_file = f"{base_filename}_predictions.csv"
     create_output_csv(sequences, labels, output_csv_file)
+    # Assuming sequences and y_pred are defined earlier in your script
+    
+    # Separate URL templates for ubiquitination and deubiquitination
+    ubiquitination_url_template = "http://ubibrowser.bio-it.cn/v2/home/API?process=ubiquitination&type=enzyme&term={}"
+    deubiquitination_url_template = "http://ubibrowser.bio-it.cn/v2/home/API?process=deubiquitination&type=enzyme&term={}"
+
+    # Initialize lists to store parsed data
+    ubiquitination_data = []
+    deubiquitination_data = []
+
+    # Initialize a flag to check if any entries with label == 1 were processed
+    processed_label_1 = False
+
+    for sequence, label in zip(sequences, labels):
+        entry_name = sequence[2]  # Assuming sequence[2] contains the entry name
+
+        if label == 1:
+            processed_label_1 = True  # Flag that at least one label == 1 entry was processed
+
+            # Call UbiBrowser API for ubiquitination data
+            ubiquitination_url = ubiquitination_url_template.format(entry_name)
+            print(f"Calling UbiBrowser API for ubiquitination data: {entry_name}")
+            ubiquitination_xml_content = call_ubibrowser_api(ubiquitination_url)
+            if ubiquitination_xml_content:
+                ubiquitination_parsed_data = parse_xml_response(ubiquitination_xml_content)
+                if ubiquitination_parsed_data:
+                    ubiquitination_data.extend(ubiquitination_parsed_data)
+                else:
+                    print(f"No ubiquitination data parsed for entry '{entry_name}'")
+            else:
+                print(f"Failed to fetch ubiquitination data for entry '{entry_name}'")
+
+            # Call UbiBrowser API for deubiquitination data
+           # deubiquitination_url = deubiquitination_url_template.format(entry_name)
+           # print(f"Calling UbiBrowser API for deubiquitination data: {entry_name}")
+           # deubiquitination_xml_content = call_ubibrowser_api(deubiquitination_url)
+           # if deubiquitination_xml_content:
+            #    deubiquitination_parsed_data = parse_xml_response(deubiquitination_xml_content)
+             #   if deubiquitination_parsed_data:
+              #      deubiquitination_data.extend(deubiquitination_parsed_data)
+               # else:
+                #    print(f"No deubiquitination data parsed for entry '{entry_name}'")
+           # else:
+            #    print(f"Failed to fetch deubiquitination data for entry '{entry_name}'")
+
+        elif label == 0:
+            # Skip processing for label == 0 entries
+            continue
+
+        else:
+            # Handle unexpected labels if needed
+            print(f"Unexpected label value: {label}")
+
+    # After processing all entries, print messages
+    if processed_label_1:
+        print("Pipeline execution completed.")
+    else:
+        print("No entries with label == 1 found or all were skipped.")
+        
+   # if not ubiquitination_data and not deubiquitination_data:
+        #print("No data found for ubiquitination and deubiquitination.")
+    if not ubiquitination_data:
+        print("No data found for ubiquitination.")
+   # elif not deubiquitination_data:
+        #print("No data found for deubiquitination.")
+
+    # Write ubiquitination data to CSV
+    ubiquitination_csv_file = f"{base_filename}_ubiquitination_data.csv"
+    with open(ubiquitination_csv_file, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=ubiquitination_data[0].keys())
+        writer.writeheader()
+        writer.writerows(ubiquitination_data)
+
+    print(f"Ubiquitination data written to {ubiquitination_csv_file}")
+
+    # Write deubiquitination data to CSV
+   # deubiquitination_csv_file = f"{base_filename}_deubiquitination_data.csv"
+  #  with open(deubiquitination_csv_file, 'w', newline='', encoding='utf-8') as f:
+    #    writer = csv.DictWriter(f, fieldnames=deubiquitination_data[0].keys())
+     #   writer.writeheader()
+      #  writer.writerows(deubiquitination_data)
+
+ #   print(f"Deubiquitination data written to {deubiquitination_csv_file}")
+
+    print("Pipeline execution completed.")
 
 if __name__ == "__main__":
     main()
-
