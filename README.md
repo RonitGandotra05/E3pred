@@ -6,7 +6,7 @@ e3pred - A Protein Sequence Analysis Pipeline
 
 Overview
 --------
-This Python package provides a comprehensive pipeline for analyzing protein sequences from FASTA files, extracting features, making predictions using pre-trained machine learning models, and fetching protein interaction data from the UbiBrowser API. The pipeline is designed to automate various bioinformatics tasks and streamline the process of protein sequence analysis.
+This Python standalone provides a comprehensive pipeline for analyzing protein sequences from FASTA files, extracting features, making predictions using pre-trained machine learning models, and fetching protein interaction data from the UbiBrowser API. The pipeline is designed to automate various bioinformatics tasks and streamline the process of protein sequence analysis.
 
 Features
 --------
