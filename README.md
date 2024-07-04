@@ -6,7 +6,7 @@ e3pred - A Protein Sequence Analysis Pipeline
 
 Overview
 --------
-This Python standalone provides a comprehensive pipeline for analyzing protein sequences from FASTA files, extracting features, making predictions using pre-trained machine learning models, and fetching protein interaction data from the UbiBrowser API. The pipeline is designed to automate various bioinformatics tasks and streamline the process of protein sequence analysis.
+This standalone Python application provides a comprehensive pipeline for analyzing protein sequences from FASTA files. It predicts whether a given sequence is an E3 ligase using multiple machine learning models. After the prediction, the application identifies E3 ligase interactions with predicted substrates using the UbiBrowser API
 
 Features
 --------
