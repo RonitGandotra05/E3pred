@@ -41,7 +41,7 @@ Installation
 
 Usage
 -----
-1. Place your input FASTA file in the same directory as the script.
+1. Place your input FASTA file in the same directory as the setup.py.
 2. Run the script: use the command "e3pred" to run the script after installing.
 3. Follow the on-screen prompts:
 - Enter the input FASTA filename (e.g., 'XYZ.fasta').
@@ -65,10 +65,10 @@ The script generates several output files:
 
 Files and Functions
 -------------------
-- `script.py`: The main script that orchestrates the entire pipeline.
+- `module1.py`: The main script that orchestrates the entire pipeline.
 - `pfeature_comp.py`: External script for feature extraction (part of the `e3pred` module).
 
-Functions in `script.py`:
+Functions in `module1.py`:
 - `get_input_file()`: Prompts for the input FASTA filename.
 - `run_pfeature_comp_command(fasta_file, base_filename, feature)`: Runs the feature extraction command.
 - `combine_csv_files_horizontally(input_files)`: Combines CSV files horizontally.
