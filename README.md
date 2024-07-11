@@ -88,19 +88,21 @@ Notes
 - Ensure the `pfeature_comp.py` script is available and correctly configured.
 - The UbiBrowser API interaction assumes internet connectivity.
 
+
 Prediction Using Pre-trained Models:
 ------------------------------------
-  The standalone uses the following pre-trained machine learning models, each with its     accuracy and AUC scores:
-    1. Logistic Regression (Géron, 2019): Accuracy 0.84, AUC 0.9
-    2. Random Forest (Breiman, 2001): Accuracy 0.86, AUC 0.92
-    3. Gradient Boosting (Friedman, 2001): Accuracy 0.84, AUC 0.9
-    4. AdaBoost: (Freund & Schapire, 1997)Accuracy 0.82, AUC 0.88
-    5. Bagging (Breiman, 1996): Accuracy 0.84, AUC 0.9
-    6. Extra Trees (Geurts et al., 2006): Accuracy 0.84, AUC 0.92
-    7. Hist Gradient Boosting (Chen & Guestrin, 2016): Accuracy 0.85, AUC 0.91
-    8. Support Vector Machine (Cortes & Vapnik, 1995): Accuracy 0.85, AUC 0.91
-    9. MLP (Rumelhart et al., 1986): Accuracy 0.82, AUC 0.89
-    10. XGBoost (Chen & Guestrin, 2016): Accuracy 0.85, AUC 0.91
+The standalone uses the following pre-trained machine learning models, each with its accuracy and AUC scores:
+
+1. **Logistic Regression** : Accuracy 0.84, AUC 0.9
+2. **Random Forest** : Accuracy 0.86, AUC 0.92
+3. **Gradient Boosting** : Accuracy 0.84, AUC 0.9
+4. **AdaBoost** : Accuracy 0.82, AUC 0.88
+5. **Bagging** : Accuracy 0.84, AUC 0.9
+6. **Extra Trees** : Accuracy 0.84, AUC 0.92
+7. **Hist Gradient Boosting** : Accuracy 0.85, AUC 0.91
+8. **Support Vector Machine** : Accuracy 0.85, AUC 0.91
+9. **MLP** : Accuracy 0.82, AUC 0.89
+10. **XGBoost** : Accuracy 0.85, AUC 0.91
 
 These models are trained on a dataset of 2,139 samples and use the top 30 features for predictions.
 
